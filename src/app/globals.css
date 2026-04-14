@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #fafaf7;
+  --bg-secondary: #f3f1eb;
+  --bg-card: #ffffff;
+  --accent-green: #2d6a4f;
+  --accent-green-light: #52b788;
+  --accent-gold: #b7950b;
+  --text-primary: #1a1a1a;
+  --text-secondary: #5c5c5c;
+  --text-muted: #9e9e9e;
+  --border: #e5e1d8;
+  --righteousness: #7b4ea0;
+  --respect: #2563eb;
+  --responsibility: #059669;
+  --flag-muraaqabah: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background:
+    linear-gradient(180deg, rgba(183, 149, 11, 0.08), transparent 18%),
+    var(--bg-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at top, rgba(45, 106, 79, 0.07), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+    var(--bg-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(82, 183, 136, 0.25);
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight text-text-primary;
+  }
+
+  p {
+    @apply text-text-secondary;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

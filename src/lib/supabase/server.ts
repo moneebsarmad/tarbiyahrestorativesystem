@@ -1,0 +1,31 @@
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+import { env } from "@/lib/env";
+import type { Database } from "@/types/supabase";
+
+export function createClient() {
+  const cookieStore = cookies();
+
+  return createServerClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options) {
+        try {
+          cookieStore.set(name, value, options);
+        } catch {
+          // Server Components cannot write cookies during render.
+        }
+      },
+      remove(name: string, options) {
+        try {
+          cookieStore.set(name, "", { ...options, maxAge: 0 });
+        } catch {
+          // Server Components cannot write cookies during render.
+        }
+      }
+    }
+  });
+}

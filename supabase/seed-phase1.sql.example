@@ -1,0 +1,26 @@
+-- Create the auth users in Supabase Auth first, then map them into public.user_roles.
+-- Replace the emails below as needed for your real accounts.
+
+insert into public.user_roles (user_id, role, campus)
+select id, 'td', 'both'
+from auth.users
+where email = 'moneeb@bha.org'
+on conflict (user_id) do update set role = excluded.role, campus = excluded.campus;
+
+insert into public.user_roles (user_id, role, campus)
+select id, 'counselor', 'both'
+from auth.users
+where email = 'counselor-test@bha.org'
+on conflict (user_id) do update set role = excluded.role, campus = excluded.campus;
+
+insert into public.user_roles (user_id, role, campus)
+select id, 'principal', 'both'
+from auth.users
+where email = 'principal-test@bha.org'
+on conflict (user_id) do update set role = excluded.role, campus = excluded.campus;
+
+insert into public.user_roles (user_id, role, campus)
+select id, 'staff', 'both'
+from auth.users
+where email = 'staff-test@bha.org'
+on conflict (user_id) do update set role = excluded.role, campus = excluded.campus;
