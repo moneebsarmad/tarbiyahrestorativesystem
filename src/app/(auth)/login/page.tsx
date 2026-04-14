@@ -104,7 +104,7 @@ export default async function LoginPage({
             </div>
           ) : null}
 
-          <LoginForm configured={hasAuthEnv()} nextPath={nextPath} />
+          <LoginForm configured={hasAuthEnv() || isMockMode()} nextPath={nextPath} />
 
           <div className="rounded-2xl border border-border bg-bg-secondary/75 p-4 text-sm text-text-secondary">
             <p className="font-medium text-text-primary">Expected Phase 1 roles</p>
