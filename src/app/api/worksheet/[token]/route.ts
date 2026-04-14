@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
 
-import { getSessionByToken, upsertWorksheetByToken } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import {
+  getSessionByToken as getSessionByTokenDb,
+  upsertWorksheetByToken as upsertWorksheetByTokenDb
+} from "@/lib/db/sessions";
+import {
+  getSessionByToken as getSessionByTokenMock,
+  upsertWorksheetByToken as upsertWorksheetByTokenMock
+} from "@/lib/mock/store";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(
   _request: Request,
   { params }: { params: { token: string } }
 ) {
-  const session = getSessionByToken(params.token);
+  const session = isMockMode()
+    ? getSessionByTokenMock(params.token)
+    : await getSessionByTokenDb(createAdminClient(), params.token);
 
   if (!session) {
     return NextResponse.json({ error: "Session token is invalid or expired." }, { status: 404 });
@@ -20,7 +31,10 @@ export async function POST(
   { params }: { params: { token: string } }
 ) {
   const body = (await request.json()) as Record<string, string | null>;
-  const worksheet = upsertWorksheetByToken(params.token, body);
+
+  const worksheet = isMockMode()
+    ? upsertWorksheetByTokenMock(params.token, body)
+    : await upsertWorksheetByTokenDb(createAdminClient(), params.token, body);
 
   return NextResponse.json({ worksheet });
 }

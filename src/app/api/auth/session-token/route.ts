@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { env } from "@/lib/env";
-import { generateStudentToken } from "@/lib/mock/store";
+import { env, isMockMode } from "@/lib/env";
+import { generateStudentToken as generateStudentTokenDb } from "@/lib/db/sessions";
+import { generateStudentToken as generateStudentTokenMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 
 export async function POST(request: Request) {
   const auth = await requireAppUser();
@@ -17,7 +19,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Session ID is required." }, { status: 400 });
   }
 
-  const token = generateStudentToken(body.sessionId);
+  const token = isMockMode()
+    ? generateStudentTokenMock(body.sessionId)
+    : await generateStudentTokenDb(createRouteClient(), body.sessionId);
 
   return NextResponse.json({
     token: token.token,

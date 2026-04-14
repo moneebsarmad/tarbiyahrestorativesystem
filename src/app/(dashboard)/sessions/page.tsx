@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
-import { listSessions } from "@/lib/mock/store";
+import { listSessions as listSessionsDb } from "@/lib/db/sessions";
+import { listSessions as listSessionsMock } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 import { ComplexityBadge } from "@/components/tarbiyah/badges";
 import { Card, CardContent } from "@/components/ui/card";
 import { getReadableDate } from "@/lib/tarbiyah";
@@ -9,7 +12,9 @@ import { getReadableDate } from "@/lib/tarbiyah";
 export default async function SessionsPage() {
   await requireAnyPermission("sessions", ["create", "read"]);
   const auth = await requireAppUser();
-  const sessions = listSessions(auth.role);
+  const sessions = isMockMode()
+    ? listSessionsMock(auth.role)
+    : await listSessionsDb(createClient(), auth.role);
 
   return (
     <div className="space-y-6">

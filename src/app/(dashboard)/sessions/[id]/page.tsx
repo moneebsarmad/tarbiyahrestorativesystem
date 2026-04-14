@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 
 import { SessionWorkspace } from "@/components/session/session-workspace";
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
-import { env } from "@/lib/env";
-import { getSessionWorkspace } from "@/lib/mock/store";
+import { env, isMockMode } from "@/lib/env";
+import { getSessionWorkspace as getSessionWorkspaceDb } from "@/lib/db/sessions";
+import { getSessionWorkspace as getSessionWorkspaceMock } from "@/lib/mock/store";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function SessionWorkspacePage({
   params
@@ -12,7 +14,9 @@ export default async function SessionWorkspacePage({
 }) {
   await requireAnyPermission("sessions", ["create", "read", "update"]);
   const auth = await requireAppUser();
-  const session = getSessionWorkspace(params.id);
+  const session = isMockMode()
+    ? getSessionWorkspaceMock(params.id)
+    : await getSessionWorkspaceDb(createClient(), params.id);
 
   if (!session) {
     notFound();

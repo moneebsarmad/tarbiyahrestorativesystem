@@ -1,14 +1,19 @@
 import { notFound } from "next/navigation";
 
 import { StudentWorksheetForm } from "@/components/session/student-worksheet-form";
-import { getSessionByToken } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { getSessionByToken as getSessionByTokenDb } from "@/lib/db/sessions";
+import { getSessionByToken as getSessionByTokenMock } from "@/lib/mock/store";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-export default function StudentSessionPage({
+export default async function StudentSessionPage({
   params
 }: {
   params: { token: string };
 }) {
-  const session = getSessionByToken(params.token);
+  const session = isMockMode()
+    ? getSessionByTokenMock(params.token)
+    : await getSessionByTokenDb(createAdminClient(), params.token);
 
   if (!session) {
     notFound();
