@@ -223,8 +223,8 @@ drop materialized view if exists public.student_3r_profile;
 create materialized view public.student_3r_profile as
 select
   s.id as student_id,
-  s.name,
-  s.grade,
+  s.student_name as name,
+  s.grade::text as grade,
   s.house,
   s.division,
   count(distinct r.id) filter (where r.primary_r = 'righteousness')::integer as righteousness_demerits,
@@ -252,7 +252,7 @@ from public.students s
 left join public.tarbiyah_referrals r on r.student_id = s.id
 left join public.tarbiyah_sessions sess on sess.referral_id = r.id
 left join public.tarbiyah_action_steps ast on ast.session_id = sess.id
-group by s.id, s.name, s.grade, s.house, s.division;
+group by s.id, s.student_name, s.grade, s.house, s.division;
 
 create unique index if not exists student_3r_profile_student_id_idx
   on public.student_3r_profile(student_id);
