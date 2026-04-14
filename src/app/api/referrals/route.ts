@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { createReferral } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { createReferral as createReferralDb } from "@/lib/db/referrals";
+import { createReferral as createReferralMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 
 export async function POST(request: Request) {
   const auth = await requireAppUser();
@@ -15,12 +18,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Student and infraction are required." }, { status: 400 });
   }
 
-  const referral = createReferral({
+  const input = {
     student_id: body.student_id,
     infraction: body.infraction,
     staff_notes: body.staff_notes?.trim() ?? "",
     referred_by: auth.user.id
-  });
+  };
+
+  const referral = isMockMode()
+    ? createReferralMock(input)
+    : await createReferralDb(createRouteClient(), input);
 
   return NextResponse.json({ referral });
 }

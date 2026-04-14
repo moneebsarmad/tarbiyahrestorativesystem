@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
-import { listReferrals } from "@/lib/mock/store";
+import { listReferrals as listReferralsDb } from "@/lib/db/referrals";
+import { listReferrals as listReferralsMock } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 import { getReadableDate } from "@/lib/tarbiyah";
 import { ComplexityBadge, StatusBadge } from "@/components/tarbiyah/badges";
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,9 @@ import { SyncSycamoreButton } from "@/components/referrals/SyncSycamoreButton";
 export default async function ReferralsPage() {
   await requireAnyPermission("referrals", ["create", "read", "read_own"]);
   const auth = await requireAppUser();
-  const referrals = listReferrals(auth.role, auth.user.id);
+  const referrals = isMockMode()
+    ? listReferralsMock(auth.role, auth.user.id)
+    : await listReferralsDb(createClient(), auth.role, auth.user.id);
 
   return (
     <div className="space-y-6">

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
-import { getReferralDetails } from "@/lib/mock/store";
+import { getReferralDetails as getReferralDetailsDb } from "@/lib/db/referrals";
+import { getReferralDetails as getReferralDetailsMock } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 import { ComplexityBadge, RBadge, StatusBadge, SubValueBadge } from "@/components/tarbiyah/badges";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReferralReviewForm } from "@/components/referrals/ReferralReviewForm";
@@ -14,7 +17,9 @@ export default async function ReferralDetailPage({
 }) {
   await requireAnyPermission("referrals", ["read", "update"]);
   const auth = await requireAppUser();
-  const referral = getReferralDetails(params.id);
+  const referral = isMockMode()
+    ? getReferralDetailsMock(params.id)
+    : await getReferralDetailsDb(createClient(), params.id);
 
   if (!referral) {
     notFound();

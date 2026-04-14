@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { openSessionFromReferral } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { openSessionFromReferral as openSessionDb } from "@/lib/db/referrals";
+import { openSessionFromReferral as openSessionMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 import type { ReferralComplexity, SubValueKey, ThreeRKey } from "@/types";
 
 export async function POST(
@@ -24,7 +27,10 @@ export async function POST(
     tertiary_sub_value?: SubValueKey | null;
   };
 
-  const session = openSessionFromReferral(params.id, body, auth.user.id);
+  const session = isMockMode()
+    ? openSessionMock(params.id, body, auth.user.id)
+    : await openSessionDb(createRouteClient(), params.id, body, auth.user.id);
+
   return NextResponse.json({ session });
 }
 
