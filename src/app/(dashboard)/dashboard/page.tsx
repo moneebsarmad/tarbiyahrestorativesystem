@@ -1,8 +1,12 @@
 import { redirect } from "next/navigation";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { getReportData, getStoreSnapshot, listActionSteps, listReferrals } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { listReferrals as listReferralsDb } from "@/lib/db/referrals";
+import { listActionSteps as listActionStepsDb, getReportData as getReportDataDb } from "@/lib/db/reports";
+import { getReportData as getReportDataMock, getStoreSnapshot, listActionSteps as listActionStepsMock, listReferrals as listReferralsMock } from "@/lib/mock/store";
 import { ROLE_HOME_ROUTE } from "@/lib/rbac/permissions";
+import { createClient } from "@/lib/supabase/server";
 import { PrincipalDashboard } from "@/components/reports/PrincipalDashboard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,10 +18,21 @@ export default async function DashboardPage() {
     redirect(ROLE_HOME_ROUTE.staff);
   }
 
-  const store = getStoreSnapshot();
-  const referrals = listReferrals(auth.role, auth.user.id);
-  const report = getReportData();
-  const openSteps = listActionSteps().filter((step) => !step.completed);
+  let referrals, report, openSteps;
+  if (isMockMode()) {
+    const store = getStoreSnapshot();
+    void store;
+    referrals = listReferralsMock(auth.role, auth.user.id);
+    report = getReportDataMock();
+    openSteps = listActionStepsMock().filter((step) => !step.completed);
+  } else {
+    const supabase = createClient();
+    [referrals, report, openSteps] = await Promise.all([
+      listReferralsDb(supabase, auth.role, auth.user.id),
+      getReportDataDb(supabase),
+      listActionStepsDb(supabase).then((steps) => steps.filter((s) => !s.completed))
+    ]);
+  }
   const stats = [
     { label: "Referrals in view", value: String(referrals.length) },
     { label: "Completed sessions", value: String(report.totalSessions) },

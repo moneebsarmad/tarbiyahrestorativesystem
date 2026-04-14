@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { sendParentComm } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { sendParentComm as sendParentCommDb } from "@/lib/db/students";
+import { sendParentComm as sendParentCommMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 
 export async function POST(request: Request) {
   const auth = await requireAppUser();
@@ -21,15 +24,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required communication fields." }, { status: 400 });
   }
 
-  const comm = sendParentComm({
+  const input = {
     session_id: body.session_id,
     student_id: body.student_id,
     parent_email: body.parent_email,
     subject: body.subject,
     body: body.body,
     sent_by: auth.user.id
-  });
+  };
 
-  return NextResponse.json({ comm, mockDelivered: true });
+  const comm = isMockMode()
+    ? sendParentCommMock(input)
+    : await sendParentCommDb(createRouteClient(), input);
+
+  return NextResponse.json({ comm, mockDelivered: isMockMode() });
 }
 

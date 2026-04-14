@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireAppUser } from "@/lib/auth/session";
-import { createAnchor } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { createAnchor as createAnchorDb } from "@/lib/db/library";
+import { createAnchor as createAnchorMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 import type { AnchorType, JsonValue, SubValueKey } from "@/types";
 
 export async function POST(request: Request) {
@@ -21,7 +24,7 @@ export async function POST(request: Request) {
     discussion_questions?: string[];
   };
 
-  const anchor = createAnchor({
+  const anchorInput = {
     sub_value: body.sub_value,
     anchor_type: body.anchor_type,
     arabic_text: body.arabic_text,
@@ -32,7 +35,11 @@ export async function POST(request: Request) {
     is_system_default: false,
     is_active: true,
     created_by: auth.user.id
-  });
+  };
+
+  const anchor = isMockMode()
+    ? createAnchorMock(anchorInput)
+    : await createAnchorDb(createRouteClient(), anchorInput);
 
   return NextResponse.json({ anchor });
 }

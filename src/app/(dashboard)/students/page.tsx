@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { requirePermission } from "@/lib/auth/session";
-import { getStudentProfile, listStudents } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { getStudentProfile as getStudentProfileDb, listStudents as listStudentsDb } from "@/lib/db/students";
+import { getStudentProfile as getStudentProfileMock, listStudents as listStudentsMock } from "@/lib/mock/store";
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
@@ -13,7 +16,18 @@ export default async function StudentsPage({
   };
 }) {
   await requirePermission("students", "read");
-  const students = listStudents(searchParams?.q ?? "");
+  const supabase = createClient();
+  const students = isMockMode()
+    ? listStudentsMock(searchParams?.q ?? "")
+    : await listStudentsDb(supabase, searchParams?.q ?? "");
+
+  const profiles = await Promise.all(
+    students.map((s) =>
+      isMockMode()
+        ? Promise.resolve(getStudentProfileMock(s.id))
+        : getStudentProfileDb(supabase, s.id)
+    )
+  );
 
   return (
     <div className="space-y-6">
@@ -27,8 +41,8 @@ export default async function StudentsPage({
       </form>
 
       <div className="grid gap-4">
-        {students.map((student) => {
-          const profile = getStudentProfile(student.id);
+        {students.map((student, index) => {
+          const profile = profiles[index];
 
           return (
             <Link key={student.id} href={`/students/${student.id}`}>

@@ -4,7 +4,10 @@ import * as React from "react";
 
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
 import { PDFReportTemplate } from "@/components/reports/PDFReportTemplate";
-import { getReportData } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { getReportData as getReportDataDb } from "@/lib/db/reports";
+import { getReportData as getReportDataMock } from "@/lib/mock/store";
+import { createRouteClient } from "@/lib/supabase/route";
 
 export const runtime = "nodejs";
 
@@ -18,11 +21,14 @@ export async function POST(request: Request) {
     mode?: "download" | "email";
   };
 
-  const report = getReportData({
+  const filters = {
     startDate: body.startDate,
     endDate: body.endDate,
     division: body.division && body.division !== "all" ? body.division : undefined
-  });
+  };
+  const report = isMockMode()
+    ? getReportDataMock(filters)
+    : await getReportDataDb(createRouteClient(), filters);
 
   if (body.mode === "email") {
     return NextResponse.json({

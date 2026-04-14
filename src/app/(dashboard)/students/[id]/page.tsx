@@ -7,7 +7,10 @@ import { SessionHistory } from "@/components/profile/SessionHistory";
 import { ThreeRProfileCard } from "@/components/profile/ThreeRProfileCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requirePermission, requireAppUser } from "@/lib/auth/session";
-import { getParentEmailDraft, getStudentProfile } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { getStudentProfile as getStudentProfileDb, getParentEmailDraft as getParentEmailDraftDb } from "@/lib/db/students";
+import { getStudentProfile as getStudentProfileMock, getParentEmailDraft as getParentEmailDraftMock } from "@/lib/mock/store";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function StudentProfilePage({
   params
@@ -16,14 +19,21 @@ export default async function StudentProfilePage({
 }) {
   await requirePermission("students", "read");
   const auth = await requireAppUser();
-  const profile = getStudentProfile(params.id);
+  const supabase = createClient();
+  const profile = isMockMode()
+    ? getStudentProfileMock(params.id)
+    : await getStudentProfileDb(supabase, params.id);
 
   if (!profile) {
     notFound();
   }
 
   const latestSession = profile.sessions[0];
-  const latestDraft = latestSession ? getParentEmailDraft(latestSession.id) : null;
+  const latestDraft = latestSession
+    ? isMockMode()
+      ? getParentEmailDraftMock(latestSession.id)
+      : await getParentEmailDraftDb(supabase, latestSession.id)
+    : null;
   const activeFlag = profile.sessions.find(
     (session) => session.muraaqabah_flag && !session.muraaqabah_overridden
   );

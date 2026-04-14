@@ -1,6 +1,9 @@
 import { requireAnyPermission, requireAppUser } from "@/lib/auth/session";
 import { ReportsWorkspace } from "@/components/reports/ReportsWorkspace";
-import { getReportData } from "@/lib/mock/store";
+import { isMockMode } from "@/lib/env";
+import { getReportData as getReportDataDb } from "@/lib/db/reports";
+import { getReportData as getReportDataMock } from "@/lib/mock/store";
+import { createClient } from "@/lib/supabase/server";
 
 function defaultDateRange() {
   const end = new Date().toISOString().slice(0, 10);
@@ -27,11 +30,10 @@ export default async function ReportsPage({
   const endDate = searchParams?.endDate ?? defaults.end;
   const division = searchParams?.division ?? "all";
 
-  const report = getReportData({
-    startDate,
-    endDate,
-    division: division === "all" ? undefined : division
-  });
+  const filters = { startDate, endDate, division: division === "all" ? undefined : division };
+  const report = isMockMode()
+    ? getReportDataMock(filters)
+    : await getReportDataDb(createClient(), filters);
 
   return (
     <div className="space-y-6">
